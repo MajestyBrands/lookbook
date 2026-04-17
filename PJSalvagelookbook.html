@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flipbook</title>
+
+  <!-- PageFlip CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/page-flip/dist/css/page-flip.css" />
+
+  <style>
+    body {
+      margin: 0;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #flipbook {
+      width: 800px;
+      height: 600px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="flipbook"></div>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- PageFlip -->
+<script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
+
+<script>
+  const pdfUrl = "PJSalvage.pdf"; // 👈 IMPORTANT: change this
+
+  const container = document.getElementById("flipbook");
+
+  const pageFlip = new St.PageFlip(container, {
+    width: 400,
+    height: 600,
+    size: "stretch",
+    minWidth: 315,
+    maxWidth: 1000,
+    minHeight: 420,
+    maxHeight: 1350,
+    showCover: true,
+    mobileScrollSupport: false
+  });
+
+  const pdfjsLib = window['pdfjs-dist/build/pdf'];
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+    const pages = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      pages.push(
+        pdf.getPage(i).then(page => {
+          const viewport = page.getViewport({ scale: 1.5 });
+
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          return page.render({
+            canvasContext: context,
+            viewport: viewport
+          }).promise.then(() => {
+            const img = document.createElement("img");
+            img.src = canvas.toDataURL();
+            return img;
+          });
+        })
+      );
+    }
+
+    Promise.all(pages).then(images => {
+      pageFlip.loadFromImages(images.map(img => img.src));
+    });
+  });
+</script>
+
+</body>
+</html>
