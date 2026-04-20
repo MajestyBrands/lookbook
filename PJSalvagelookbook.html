@@ -20,20 +20,20 @@
 
     .viewer-wrap {
       position: relative;
-      width: 95vw;
-      height: 95vh;
+      width: 98vw;
+      height: 98vh;
       display: flex;
       justify-content: center;
       align-items: center;
     }
 
     #flipbook {
-      width: 95vw;
-      height: 95vh;
+      width: 98vw;
+      height: 98vh;
     }
 
     .stf__parent {
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.18);
       border-radius: 10px;
     }
 
@@ -61,10 +61,6 @@
     .nav-arrow:hover {
       transform: translateY(-50%) scale(1.06);
       box-shadow: 0 12px 26px rgba(0,0,0,0.22);
-    }
-
-    .nav-arrow:active {
-      transform: translateY(-50%) scale(0.98);
     }
 
     .nav-arrow.left {
@@ -129,33 +125,36 @@
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
 
-    const pageFlip = new St.PageFlip(container, {
-      width: 600,
-      height: 800,
-      size: "stretch",
-      autoSize: true,
-      maxWidth: 1200,
-      maxHeight: 1600,
-      minWidth: 315,
-      minHeight: 400,
-      showCover: true,
-      mobileScrollSupport: false,
-      useMouseEvents: true
-    });
-
-    prevBtn.addEventListener("click", () => {
-      pageFlip.flipPrev();
-    });
-
-    nextBtn.addEventListener("click", () => {
-      pageFlip.flipNext();
-    });
-
     const pdfjsLib = window["pdfjs-dist/build/pdf"];
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+    async function loadFlipbook() {
+      const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+
+      const firstPage = await pdf.getPage(1);
+      const firstViewport = firstPage.getViewport({ scale: 1 });
+
+      const pageWidth = firstViewport.width;
+      const pageHeight = firstViewport.height;
+
+      const pageFlip = new St.PageFlip(container, {
+        width: pageWidth,
+        height: pageHeight,
+        size: "stretch",
+        autoSize: true,
+        maxWidth: pageWidth * 2,
+        maxHeight: pageHeight * 2,
+        minWidth: pageWidth * 0.35,
+        minHeight: pageHeight * 0.35,
+        showCover: true,
+        mobileScrollSupport: false,
+        useMouseEvents: true
+      });
+
+      prevBtn.addEventListener("click", () => pageFlip.flipPrev());
+      nextBtn.addEventListener("click", () => pageFlip.flipNext());
+
       const pages = [];
 
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -173,18 +172,17 @@
               canvasContext: context,
               viewport: viewport
             }).promise.then(() => {
-              const img = document.createElement("img");
-              img.src = canvas.toDataURL("image/jpeg", 1.0);
-              return img;
+              return canvas.toDataURL("image/jpeg", 1.0);
             });
           })
         );
       }
 
-      Promise.all(pages).then(images => {
-        pageFlip.loadFromImages(images.map(img => img.src));
-      });
-    });
+      const images = await Promise.all(pages);
+      pageFlip.loadFromImages(images);
+    }
+
+    loadFlipbook();
   </script>
 </body>
 </html>
