@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>PJ Salvage Lookbook</title>
 
-  <!-- PageFlip CSS -->
   <link rel="stylesheet" href="https://unpkg.com/page-flip/dist/css/page-flip.css" />
 
   <style>
@@ -16,6 +15,16 @@
       align-items: center;
       height: 100vh;
       overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    .viewer-wrap {
+      position: relative;
+      width: 95vw;
+      height: 95vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     #flipbook {
@@ -23,78 +32,159 @@
       height: 95vh;
     }
 
-    /* Optional luxury feel */
     .stf__parent {
       box-shadow: 0 20px 40px rgba(0,0,0,0.2);
       border-radius: 10px;
     }
-  </style>
-</head>
 
-<body>
-
-<div id="flipbook"></div>
-
-<!-- PDF.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-<!-- PageFlip -->
-<script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
-
-<script>
-  // 👇 THIS MUST MATCH YOUR FILE NAME EXACTLY
-  const pdfUrl = "PJSalvage.pdf";
-
-  const container = document.getElementById("flipbook");
-
-  const pageFlip = new St.PageFlip(container, {
-    width: 600,
-    height: 800,
-    size: "stretch",
-    autoSize: true,
-    maxWidth: 1200,
-    maxHeight: 1600,
-    minWidth: 315,
-    minHeight: 400,
-    showCover: true,
-    mobileScrollSupport: false,
-  });
-
-  const pdfjsLib = window['pdfjs-dist/build/pdf'];
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-  pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
-    const pages = [];
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      pages.push(
-        pdf.getPage(i).then(page => {
-          const viewport = page.getViewport({ scale: 2 });
-
-          const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d");
-
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-
-          return page.render({
-            canvasContext: context,
-            viewport: viewport
-          }).promise.then(() => {
-            const img = document.createElement("img");
-            img.src = canvas.toDataURL("image/jpeg", 1.0);
-            return img;
-          });
-        })
-      );
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 56px;
+      height: 56px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+      cursor: pointer;
+      font-size: 28px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+      opacity: 0.95;
     }
 
-    Promise.all(pages).then(images => {
-      pageFlip.loadFromImages(images.map(img => img.src));
-    });
-  });
-</script>
+    .nav-arrow:hover {
+      transform: translateY(-50%) scale(1.06);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.22);
+    }
 
+    .nav-arrow:active {
+      transform: translateY(-50%) scale(0.98);
+    }
+
+    .nav-arrow.left {
+      left: 18px;
+    }
+
+    .nav-arrow.right {
+      right: 18px;
+    }
+
+    .nav-label {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.92);
+      padding: 10px 16px;
+      border-radius: 999px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+      font-size: 14px;
+      color: #444;
+      z-index: 1000;
+    }
+
+    @media (max-width: 768px) {
+      .nav-arrow {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+      }
+
+      .nav-arrow.left {
+        left: 10px;
+      }
+
+      .nav-arrow.right {
+        right: 10px;
+      }
+
+      .nav-label {
+        font-size: 12px;
+        padding: 8px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="viewer-wrap">
+    <button class="nav-arrow left" id="prevBtn" aria-label="Previous page">‹</button>
+    <div id="flipbook"></div>
+    <button class="nav-arrow right" id="nextBtn" aria-label="Next page">›</button>
+    <div class="nav-label">Use arrows to flip pages</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
+
+  <script>
+    const pdfUrl = "PJSalvage.pdf";
+
+    const container = document.getElementById("flipbook");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    const pageFlip = new St.PageFlip(container, {
+      width: 600,
+      height: 800,
+      size: "stretch",
+      autoSize: true,
+      maxWidth: 1200,
+      maxHeight: 1600,
+      minWidth: 315,
+      minHeight: 400,
+      showCover: true,
+      mobileScrollSupport: false,
+      useMouseEvents: true
+    });
+
+    prevBtn.addEventListener("click", () => {
+      pageFlip.flipPrev();
+    });
+
+    nextBtn.addEventListener("click", () => {
+      pageFlip.flipNext();
+    });
+
+    const pdfjsLib = window["pdfjs-dist/build/pdf"];
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+      const pages = [];
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        pages.push(
+          pdf.getPage(i).then(page => {
+            const viewport = page.getViewport({ scale: 2 });
+
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            return page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise.then(() => {
+              const img = document.createElement("img");
+              img.src = canvas.toDataURL("image/jpeg", 1.0);
+              return img;
+            });
+          })
+        );
+      }
+
+      Promise.all(pages).then(images => {
+        pageFlip.loadFromImages(images.map(img => img.src));
+      });
+    });
+  </script>
 </body>
 </html>
