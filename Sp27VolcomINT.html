@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sp27VolcomINT</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/page-flip/dist/css/page-flip.css" />
+
+  <style>
+    body {
+      margin: 0;
+      background: #e5e5e5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    .viewer-wrap {
+      position: relative;
+      width: 98vw;
+      height: 98vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #flipbook {
+      width: 98vw;
+      height: 98vh;
+    }
+
+    .stf__parent {
+      box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+      border-radius: 10px;
+    }
+
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 56px;
+      height: 56px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+      cursor: pointer;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      transition: all 0.2s ease;
+    }
+
+    .nav-arrow:hover {
+      transform: translateY(-50%) scale(1.06);
+    }
+
+    .nav-arrow.left {
+      left: 18px;
+    }
+
+    .nav-arrow.right {
+      right: 18px;
+    }
+
+    .nav-label {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.92);
+      padding: 10px 16px;
+      border-radius: 999px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+      font-size: 14px;
+      color: #444;
+      z-index: 1000;
+    }
+
+    @media (max-width: 768px) {
+      .nav-arrow {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="viewer-wrap">
+    <button class="nav-arrow left" id="prevBtn">‹</button>
+    <div id="flipbook"></div>
+    <button class="nav-arrow right" id="nextBtn">›</button>
+    <div class="nav-label">Use arrows to flip pages</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
+
+  <script>
+    // ✅ YOUR NEW FILE HERE
+    const pdfUrl = "Sp27Volcom.pdf";
+
+    const container = document.getElementById("flipbook");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    const pdfjsLib = window["pdfjs-dist/build/pdf"];
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+    async function loadFlipbook() {
+      const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+
+      const firstPage = await pdf.getPage(1);
+      const firstViewport = firstPage.getViewport({ scale: 1 });
+
+      const pageWidth = firstViewport.width;
+      const pageHeight = firstViewport.height;
+
+      const pageFlip = new St.PageFlip(container, {
+        width: pageWidth,
+        height: pageHeight,
+        size: "stretch",
+        autoSize: true,
+        maxWidth: pageWidth * 2,
+        maxHeight: pageHeight * 2,
+        minWidth: pageWidth * 0.35,
+        minHeight: pageHeight * 0.35,
+        showCover: true,
+        mobileScrollSupport: false
+      });
+
+      prevBtn.addEventListener("click", () => pageFlip.flipPrev());
+      nextBtn.addEventListener("click", () => pageFlip.flipNext());
+
+      const pages = [];
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        pages.push(
+          pdf.getPage(i).then(page => {
+            const viewport = page.getViewport({ scale: 2 });
+
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            return page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise.then(() => {
+              return canvas.toDataURL("image/jpeg", 1.0);
+            });
+          })
+        );
+      }
+
+      const images = await Promise.all(pages);
+      pageFlip.loadFromImages(images);
+    }
+
+    loadFlipbook();
+  </script>
+</body>
+</html>
