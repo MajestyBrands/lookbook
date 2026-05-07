@@ -49,27 +49,14 @@
       box-shadow: 0 8px 22px rgba(0,0,0,0.18);
       cursor: pointer;
       font-size: 28px;
-      line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-      opacity: 0.95;
     }
 
-    .nav-arrow:hover {
-      transform: translateY(-50%) scale(1.06);
-      box-shadow: 0 12px 26px rgba(0,0,0,0.22);
-    }
-
-    .nav-arrow.left {
-      left: 18px;
-    }
-
-    .nav-arrow.right {
-      right: 18px;
-    }
+    .nav-arrow.left { left: 18px; }
+    .nav-arrow.right { right: 18px; }
 
     .nav-label {
       position: absolute;
@@ -79,40 +66,18 @@
       background: rgba(255,255,255,0.92);
       padding: 10px 16px;
       border-radius: 999px;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.12);
       font-size: 14px;
       color: #444;
       z-index: 1000;
-    }
-
-    @media (max-width: 768px) {
-      .nav-arrow {
-        width: 48px;
-        height: 48px;
-        font-size: 24px;
-      }
-
-      .nav-arrow.left {
-        left: 10px;
-      }
-
-      .nav-arrow.right {
-        right: 10px;
-      }
-
-      .nav-label {
-        font-size: 12px;
-        padding: 8px 12px;
-      }
     }
   </style>
 </head>
 
 <body>
   <div class="viewer-wrap">
-    <button class="nav-arrow left" id="prevBtn" aria-label="Previous page">‹</button>
+    <button class="nav-arrow left" id="prevBtn">‹</button>
     <div id="flipbook"></div>
-    <button class="nav-arrow right" id="nextBtn" aria-label="Next page">›</button>
+    <button class="nav-arrow right" id="nextBtn">›</button>
     <div class="nav-label">Use arrows to flip pages</div>
   </div>
 
@@ -120,7 +85,7 @@
   <script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
 
   <script>
-    const pdfUrl = "Sp27VolcomINT.pdf";
+    const pdfUrl = "SP27VolcomINT.pdf"; // ✅ FIXED NAME
 
     const container = document.getElementById("flipbook");
     const prevBtn = document.getElementById("prevBtn");
@@ -136,21 +101,12 @@
       const firstPage = await pdf.getPage(1);
       const firstViewport = firstPage.getViewport({ scale: 1 });
 
-      const pageWidth = firstViewport.width;
-      const pageHeight = firstViewport.height;
-
       const pageFlip = new St.PageFlip(container, {
-        width: pageWidth,
-        height: pageHeight,
+        width: firstViewport.width,
+        height: firstViewport.height,
         size: "stretch",
         autoSize: true,
-        maxWidth: pageWidth * 2,
-        maxHeight: pageHeight * 2,
-        minWidth: pageWidth * 0.35,
-        minHeight: pageHeight * 0.35,
-        showCover: true,
-        mobileScrollSupport: false,
-        useMouseEvents: true
+        showCover: true
       });
 
       prevBtn.addEventListener("click", () => pageFlip.flipPrev());
@@ -172,9 +128,7 @@
             return page.render({
               canvasContext: context,
               viewport: viewport
-            }).promise.then(() => {
-              return canvas.toDataURL("image/jpeg", 1.0);
-            });
+            }).promise.then(() => canvas.toDataURL("image/jpeg", 1.0));
           })
         );
       }
